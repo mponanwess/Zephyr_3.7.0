@@ -1,0 +1,33 @@
+{
+    "name": "Zephyr Development",
+    "image": "zephyrprojectrtos/zephyr-build:latest",
+    "workspaceFolder": "/workdir",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "nordic-semiconductor.nrf-devicetree",
+                "GitHub.copilot"
+            ],
+            "settings": {
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                "files.associations": {
+                "*.overlay": "dts",
+                "*.dts": "dts",
+                "*.dtsi": "dts"
+                }
+            }
+        }
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workdir,type=bind,consistency=cached"
+    ],
+    "remoteUser": "root",
+    "runArgs": [
+        "--device=/dev/ttyUSB0",
+        "--privileged",
+        "--group-add=dialout"
+    ]
+}
