@@ -5,8 +5,6 @@
 west boards | grep <board_name>
 ```
 
----
-
 ## Configure
 
 ### Board Files
@@ -40,15 +38,11 @@ Required in `prj.conf`:
 CONFIG_NEWLIB_LIBC=y
 ```
 
----
-
 ## Build
 
 ```bash
 west build -p always -b <board_name> ./apps/helloworld
 ```
-
----
 
 ## Flash
 
@@ -56,15 +50,11 @@ west build -p always -b <board_name> ./apps/helloworld
 west flash
 ```
 
----
-
 ## Monitor (ESP32 only)
 
 ```bash
 west espressif monitor -p /dev/ttyUSB0
 ```
-
----
 
 **Note:**
 All commands must be executed inside the DevContainer from `/workdir`.
