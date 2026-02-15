@@ -4,6 +4,15 @@
 - Docker, VSCode, Dev Containers extension
 - USB device connected
 
+## Structure
+```
+.
+├── .devcontainer/    → VSCode Dev Container config
+├── apps/             → Application examples
+├── manifest/         → West workspace configuration
+└── README.md
+```
+
 ## Setup
 
 ### 1. Detect serial port

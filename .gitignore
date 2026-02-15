@@ -1,0 +1,15 @@
+# Zephyr build artifacts
+build/
+zephyr/
+modules/
+tools/
+bootloader/
+.west/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
