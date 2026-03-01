@@ -2,6 +2,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/modem/backend/uart.h>
+#include <zephyr/modem/pipe.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(modem, LOG_LEVEL_INF);
@@ -15,39 +17,21 @@ static const struct gpio_dt_spec pwr_en =
 static const struct gpio_dt_spec pwrkey =
     GPIO_DT_SPEC_GET(DT_NODELABEL(pwrkey), gpios);
 
-static void uart_cb(const struct device *dev, void *user_data)
-{
-    static char buf[128];
-    static int  pos;
-    uint8_t c;
-
-    if (!uart_irq_update(dev) || !uart_irq_rx_ready(dev)) {
-        return;
-    }
-
-    while (uart_fifo_read(dev, &c, 1) == 1) {
-        if (c == '\n') {
-            buf[pos] = '\0';
-            if (pos > 0) {
-                LOG_INF("< %s", buf);
-            }
-            pos = 0;
-        } else if (c != '\r' && pos < sizeof(buf) - 1) {
-            buf[pos++] = c;
-        }
-    }
-}
+static uint8_t uart_backend_receive_buf[1024];
+static uint8_t uart_backend_transmit_buf[256];
+static struct modem_backend_uart uart_backend;
+static const struct device *uart_dev = DEVICE_DT_GET(DT_NODELABEL(uart2));
 
 static int modem_power_on(void)
 {
     int ret;
 
     if (!gpio_is_ready_dt(&pwr_en)) {
-        LOG_ERR("PWR_EN GPIO not ready");
+        LOG_ERR("PWR_EN GPIO device not ready");
         return -ENODEV;
     }
     if (!gpio_is_ready_dt(&pwrkey)) {
-        LOG_ERR("PWRKEY GPIO not ready");
+        LOG_ERR("PWRKEY GPIO device not ready");
         return -ENODEV;
     }
 
@@ -78,28 +62,45 @@ static int modem_power_on(void)
 int main(void)
 {
     int ret;
-    const struct device *uart = DEVICE_DT_GET(DT_NODELABEL(uart2));
 
-    if (!device_is_ready(uart)) {
-        LOG_ERR("UART not ready");
-        return -1;
-    }
-
-    uart_irq_callback_set(uart, uart_cb);
-    uart_irq_rx_enable(uart);
+    LOG_INF("Starting Application...");
 
     ret = modem_power_on();
     if (ret < 0) {
-        LOG_ERR("Failed to power on modem: %d", ret);
+        LOG_ERR("Failed to power on modem: %d. Application halted.", ret);
         return ret;
     }
 
-    LOG_INF("Sending AT...");
-    uart_poll_out(uart, 'A');
-    uart_poll_out(uart, 'T');
-    uart_poll_out(uart, '\r');
-    uart_poll_out(uart, '\n');
+    if (!device_is_ready(uart_dev)) {
+        LOG_ERR("UART device not ready");
+        return -ENODEV;
+    }
 
-    k_sleep(K_FOREVER);
+    LOG_INF("UART device ready: %s", uart_dev->name);
+
+    const struct modem_backend_uart_config uart_backend_config = {
+        .uart = uart_dev,
+        .receive_buf = uart_backend_receive_buf,
+        .receive_buf_size = sizeof(uart_backend_receive_buf),
+        .transmit_buf = uart_backend_transmit_buf,
+        .transmit_buf_size = sizeof(uart_backend_transmit_buf),
+    };
+
+    struct modem_pipe *uart_pipe = modem_backend_uart_init(
+        &uart_backend,
+        &uart_backend_config
+    );
+
+    if (uart_pipe == NULL) {
+        LOG_ERR("Failed to initialize UART backend");
+        return -EIO;
+    }
+
+    LOG_INF("UART backend initialized, got pipe: %p", uart_pipe);
+
+    while (1) {
+        k_sleep(K_FOREVER);
+    }
+
     return 0;
 }
