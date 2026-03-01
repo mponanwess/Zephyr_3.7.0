@@ -1,0 +1,47 @@
+/ {
+    chosen {
+        zephyr,ppp-uart = &uart2;
+    };
+
+    aliases {
+        modem = &modem_a7670g;
+    };
+
+    modem_pins: modem_pins {
+        compatible = "gpio-leds";
+
+        power: mdm_pwr {
+            gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+            label = "MODEM_PWR_EN";
+        };
+
+        pwrkey: mdm_pwrkey {
+            gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+            label = "MODEM_PWRKEY";
+        };
+    };
+};
+
+&uart2 {
+    status = "okay";
+    current-speed = <115200>;
+    pinctrl-0 = <&uart2_default>;
+    pinctrl-names = "default";
+
+    modem_a7670g: modem {
+        compatible = "zephyr,modem-generic";
+        status = "okay";
+    };
+};
+
+&pinctrl {
+    uart2_default: uart2_default {
+        group1 {
+            pinmux = <UART2_TX_GPIO48>;
+        };
+        group2 {
+            pinmux = <UART2_RX_GPIO47>;
+            bias-pull-up;
+        };
+    };
+};
